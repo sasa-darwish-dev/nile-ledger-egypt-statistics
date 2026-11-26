@@ -14,13 +14,82 @@
 // Outside the grader's container, MAKEFUN_OUTPUT_DIR stands in for /output:
 //   mkdir -p out && MAKEFUN_OUTPUT_DIR=out node main.ts
 
-import { cpSync, existsSync, mkdirSync, writeFileSync } from 'node:fs';
+import {
+  cpSync, existsSync, lstatSync, mkdirSync, readdirSync, readFileSync, writeFileSync,
+} from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { buildDossier } from './vendor/makefun-frontend.ts';
 
 const here = fileURLToPath(new URL('.', import.meta.url));
 const out = process.env.MAKEFUN_OUTPUT_DIR ?? '/output';
+
+function preflight(): { fileCount: number; screenshotCount: number } {
+  const app = join(here, 'app');
+  const index = join(app, 'index.html');
+  if (!existsSync(index) || !lstatSync(index).isFile()) {
+    throw new Error('app/index.html must exist and be a regular file.');
+  }
+
+  let entryCount = 0;
+  let fileCount = 0;
+
+  function inspectDirectory(directory: string): void {
+    for (const name of readdirSync(directory).sort()) {
+      const path = join(directory, name);
+      const relative = path.slice(here.length);
+      const info = lstatSync(path);
+      entryCount += 1;
+      if (entryCount > 993) {
+        throw new Error('app/ exceeds 993 entries (files and directories).');
+      }
+      if (info.isDirectory()) {
+        inspectDirectory(path);
+      } else if (info.isFile()) {
+        fileCount += 1;
+        // Namespace declarations identify XML vocabularies, not network resources.
+        // Remove only their quoted values; the same URL elsewhere is still rejected.
+        const contents = readFileSync(path).toString('utf8').replace(
+          /\bxmlns(?::[\w.-]+)?\s*=\s*(["'])(https?:\/\/[^"']+)\1/gi,
+          'xmlns=""',
+        );
+        const externalUrl = contents.match(/https?:\/\/[^\s"'<>`\\]+/i);
+        if (externalUrl) {
+          throw new Error(`${relative} contains an absolute HTTP(S) URL: ${externalUrl[0]}`);
+        }
+      } else {
+        throw new Error(`${relative} must be a regular file or directory (no symbolic links).`);
+      }
+    }
+  }
+
+  inspectDirectory(app);
+
+  const screenshots = join(here, 'screenshots');
+  if (!existsSync(screenshots) || !lstatSync(screenshots).isDirectory()) {
+    throw new Error('screenshots/ must exist and contain 3 or 4 PNG/JPG files.');
+  }
+  const images = readdirSync(screenshots).filter((name) => /\.(?:png|jpe?g)$/i.test(name));
+  if (images.length < 3 || images.length > 4) {
+    throw new Error(`screenshots/ must contain 3 or 4 PNG/JPG files; found ${images.length}.`);
+  }
+  for (const name of images) {
+    const info = lstatSync(join(screenshots, name));
+    if (!info.isFile() || info.size >= 256 * 1024) {
+      throw new Error(`screenshots/${name} must be a regular file smaller than 256 KiB.`);
+    }
+  }
+
+  return { fileCount, screenshotCount: images.length };
+}
+
+let counts: { fileCount: number; screenshotCount: number };
+try {
+  counts = preflight();
+} catch (error) {
+  console.error(`Pre-flight failed: ${error instanceof Error ? error.message : String(error)}`);
+  process.exit(1);
+}
 
 mkdirSync(out, { recursive: true });
 cpSync(join(here, 'app'), join(out, 'app'), { recursive: true });
@@ -34,3 +103,5 @@ writeFileSync(
   join(out, 'dossier.json'),
   buildDossier(out, { text_max_bytes: 163840, screenshots: { max: 4, max_bytes: 262144 }, app_max_files: 993, app_max_bytes: 16777216 }),
 );
+
+console.log(`Export complete: ${counts.fileCount} app files, ${counts.screenshotCount} screenshots.`);
