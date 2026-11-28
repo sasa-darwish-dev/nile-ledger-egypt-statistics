@@ -34,13 +34,14 @@ export function sparkline(series) {
   const low = Math.min(...values);
   const high = Math.max(...values);
   const points = values.map((item, index) => {
-    const x = index / (values.length - 1) * 180;
+    const x = values.length === 1 ? 90 : index / (values.length - 1) * 180;
     const y = 38 - (item - low) / (high - low || 1) * 30;
     return `${x},${y}`;
   }).join(' ');
 
   return `<svg class="spark" viewBox="0 0 184 44" aria-hidden="true">
     <polyline points="${points}" fill="none" stroke="currentColor" stroke-width="2" vector-effect="non-scaling-stroke" />
+    ${values.length === 1 ? '<circle cx="90" cy="38" r="3" fill="currentColor" />' : ''}
   </svg>`;
 }
 
@@ -60,7 +61,9 @@ export function chart(sets, options = {}) {
   low = scale.min;
   high = scale.max;
 
-  const x = (year) => LEFT + (year - minYear) / (maxYear - minYear || 1) * (WIDTH - LEFT - RIGHT);
+  const x = (year) => minYear === maxYear
+    ? LEFT + (WIDTH - LEFT - RIGHT) / 2
+    : LEFT + (year - minYear) / (maxYear - minYear) * (WIDTH - LEFT - RIGHT);
   const y = (valueAtYear) => height - BOTTOM - (valueAtYear - low) / (high - low) * (height - TOP - BOTTOM);
   const format = (numberAtTick) => indexed ? number(numberAtTick, 0) : value(numberAtTick, unit);
   const yTicks = scale.ticks;

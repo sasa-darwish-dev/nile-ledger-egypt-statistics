@@ -8,7 +8,7 @@ Nile Ledger is a self-contained, static statistics site for Egypt. It turns the 
 
 The data pages show annual values, source notes, and CSV downloads. The overview includes latest-value cards, sparks, a topic filter, and a searchable directory. Comparison indexes two series to 100 at the first year they share. A responsive layout, keyboard-friendly navigation and controls, and a working light/dark switch are included.
 
-The site uses only local files, system fonts, and hand-drawn SVG charts. No build step or network request is required. Open `app/index.html` directly, or run `node serve.ts` and visit `http://localhost:8080`. Run `tools/shoot.sh` to regenerate the four review screenshots. The figures come from the World Bank Open Data API (retrieved 26 Nov 2026) and are kept in app/data.js; series can be modelled estimates and may have gaps or later revisions. See About & Sources in the site for methodology and limitations.
+The site uses only local files, system fonts, and hand-drawn SVG charts. No build step or network request is required. Open `app/index.html` directly, or run `node serve.ts` and visit `http://localhost:8080`. Run `tools/shoot.sh` to regenerate the four review screenshots. The figures are kept in app/data.js; the original series were retrieved 26 Nov 2026 and seven additional World Bank indicators were retrieved 28 Nov 2026. The dataset retrieval date is 2026-11-28. Series can be modelled estimates and may have gaps or later revisions. See About & Sources in the site for methodology and limitations.
 
 ## Run it
 

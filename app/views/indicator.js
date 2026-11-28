@@ -90,7 +90,7 @@ export function indicator(code) {
         <p class="insight">${peakSummary(item)}</p>
         <p>${item.unit === 'usd'
           ? 'Current-dollar values reflect economic activity as well as price and exchange-rate movements. They are not adjusted for inflation.'
-          : item.code === 'SL.UEM.TOTL.ZS'
+          : ['SL.UEM.TOTL.ZS', 'SL.TLF.CACT.FE.ZS'].includes(item.code)
             ? 'This series uses modelled ILO estimates. Estimates may differ from national survey results.'
             : 'Values describe a national average and do not show differences between regions or population groups.'}</p>
         <p>Lines connect available observations. Missing years are not estimated here. Relative changes are calculated from the supplied values.</p>

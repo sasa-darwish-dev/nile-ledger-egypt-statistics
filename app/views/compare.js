@@ -36,6 +36,9 @@ function latestLegend(indicator) {
 }
 
 function compareChart(first, second, years, indexed) {
+  if (!years.length) {
+    return '<p class="method-line">These series have no shared observation years. Choose another pair to compare; the latest values for each series are shown below.</p>';
+  }
   if (indexed) {
     const baseYear = years[0];
     const series = [first, second].map((indicator) => ({
@@ -89,7 +92,7 @@ export function compare(firstCode = 'NY.GDP.MKTP.CD', secondCode = 'SP.POP.TOTL'
     <section class="panel compare-panel">
       ${selectPair(first, second)}
       ${compareChart(first, second, years, indexed)}
-      ${citation(`${years[0]}–${years.at(-1)}`, [latest(first)[0], latest(second)[0]].includes(2025) ? 2025 : undefined)}
+      ${citation(years.length ? `${years[0]}–${years.at(-1)}` : 'Latest observations shown with their individual years', [latest(first)[0], latest(second)[0]].includes(2025) ? 2025 : undefined)}
     </section>
     <div class="detail-bottom comparison-notes">
       <section class="panel">
@@ -114,14 +117,14 @@ export function bindCompare(root, firstCode, secondCode) {
   const years = sharedYears(first, second);
   const indexed = isLevel(first) && isLevel(second);
 
-  if (indexed) {
+  if (indexed && years.length) {
     const baseYear = years[0];
     const sets = [first, second].map((indicator) => ({
       name: title(indicator),
       series: indexSeries(indicator, years, baseYear),
     }));
     bindChart(root, sets, { indexed: true });
-  } else {
+  } else if (years.length) {
     const sets = [first, second].map((indicator) => [{
       name: title(indicator),
       series: years.map((year) => [year, indicator.series.find((point) => point[0] === year)[1]]),
